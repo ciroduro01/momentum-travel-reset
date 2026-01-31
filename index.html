@@ -23,36 +23,51 @@
         <div id="success-msg" class="message">Password updated! You can now open the app and log in.</div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // Using your specific Project ID and Anon Key
-        const supabaseUrl = 'https://iyvdwywgihhgxkbradom.supabase.co'; 
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5dmR3eXdnaWhoZ3hrYnJhZG9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3ODUxMTUsImV4cCI6MjA4NTM2MTExNX0.6hkOAOQvDVczhZlxKZ6rp5cwk-85mLvNVPQFnmOZUIk';
-        
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseUrl = 'https://iyvdwywgihhgxkbradom.supabase.co'; 
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5dmR3eXdnaWhoZ3hrYnJhZG9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3ODUxMTUsImV4cCI6MjA4NTM2MTExNX0.6hkOAOQvDVczhZlxKZ6rp5cwk-85mLvNVPQFnmOZUIk';
+    
+    // Initialize the client
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
-        async function updatePassword() {
-            const password = document.getElementById('new-password').value;
-            const btn = document.getElementById('reset-btn');
-            const msg = document.getElementById('success-msg');
-
-            if (password.length < 6) return alert("Password must be at least 6 characters.");
-
-            btn.disabled = true;
-            btn.innerText = "Updating...";
-
-            const { error } = await supabase.auth.updateUser({ password: password });
-
-            if (error) {
-                alert("Error: " + error.message);
-                btn.disabled = false;
-                btn.innerText = "Update Password";
-            } else {
-                btn.style.display = "none";
-                document.getElementById('new-password').style.display = "none";
-                msg.style.display = "block";
-            }
+    // CRITICAL: Supabase needs a moment to catch the token from the URL
+    window.onload = async () => {
+        const { data, error } = await supabase.auth.getSession();
+        if (error || !data.session) {
+            console.error("No active session found. The link might be expired.");
+            // Optional: Show a message to the user that the link is invalid
+        } else {
+            console.log("Session verified! User is ready to reset.");
         }
-    </script>
+    };
+
+    async function updatePassword() {
+        const password = document.getElementById('new-password').value;
+        const btn = document.getElementById('reset-btn');
+        const msg = document.getElementById('success-msg');
+
+        if (password.length < 6) return alert("Password must be at least 6 characters.");
+
+        btn.disabled = true;
+        btn.innerText = "Updating...";
+
+        // Now that the session is verified, this will work!
+        const { error } = await supabase.auth.updateUser({ password: password });
+
+        if (error) {
+            alert("Error: " + error.message);
+            btn.disabled = false;
+            btn.innerText = "Update Password";
+        } else {
+            btn.style.display = "none";
+            document.getElementById('new-password').style.display = "none";
+            msg.style.display = "block";
+            // Log the user out so they have to sign in fresh in the app
+            await supabase.auth.signOut();
+        }
+    }
+  </script>
 </body>
+
 </html>
