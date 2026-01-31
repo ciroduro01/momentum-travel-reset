@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Momentum Travel | Reset Password</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #F8F9FA; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 12px; shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h2 { color: #2C3E50; }
+        input { width: 100%; padding: 12px; margin: 1rem 0; border: 1px solid #DDD; border-radius: 8px; box-sizing: border-box; }
+        button { background: #3498DB; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; }
+        button:disabled { background: #BDC3C7; }
+        .message { margin-top: 1rem; font-size: 0.9rem; color: #27AE60; display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Reset Your Password</h2>
+        <p>Enter a new password for your Momentum Travel account.</p>
+        <input type="password" id="new-password" placeholder="New Password (min. 6 characters)" />
+        <button id="reset-btn" onclick="updatePassword()">Update Password</button>
+        <div id="success-msg" class="message">Password updated! You can now open the app and log in.</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Using your specific Project ID and Anon Key
+        const supabaseUrl = 'https://iyvdwywgihhgxkbradom.supabase.co'; 
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5dmR3eXdnaWhoZ3hrYnJhZG9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3ODUxMTUsImV4cCI6MjA4NTM2MTExNX0.6hkOAOQvDVczhZlxKZ6rp5cwk-85mLvNVPQFnmOZUIk';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        async function updatePassword() {
+            const password = document.getElementById('new-password').value;
+            const btn = document.getElementById('reset-btn');
+            const msg = document.getElementById('success-msg');
+
+            if (password.length < 6) return alert("Password must be at least 6 characters.");
+
+            btn.disabled = true;
+            btn.innerText = "Updating...";
+
+            const { error } = await supabase.auth.updateUser({ password: password });
+
+            if (error) {
+                alert("Error: " + error.message);
+                btn.disabled = false;
+                btn.innerText = "Update Password";
+            } else {
+                btn.style.display = "none";
+                document.getElementById('new-password').style.display = "none";
+                msg.style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>
