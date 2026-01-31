@@ -29,62 +29,71 @@
         <div id="success-msg">Password updated! You can now return to the app and sign in.</div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const supabaseUrl = 'https://iyvdwywgihhgxkbradom.supabase.co'; 
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5dmR3eXdnaWhoZ3hrYnJhZG9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3ODUxMTUsImV4cCI6MjA4NTM2MTExNX0.6hkOAOQvDVczhZlxKZ6rp5cwk-85mLvNVPQFnmOZUIk';
-        
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseUrl = 'https://iyvdwywgihhgxkbradom.supabase.co'; 
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5dmR3eXdnaWhoZ3hrYnJhZG9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3ODUxMTUsImV4cCI6MjA4NTM2MTExNX0.6hkOAOQvDVczhZlxKZ6rp5cwk-85mLvNVPQFnmOZUIk';
+    
+    // Initialize with better session handling
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: true
+        }
+    });
 
-        // This runs immediately when the page loads
-        window.onload = async () => {
-            const statusDiv = document.getElementById('setup-status');
-            const btn = document.getElementById('reset-btn');
+    window.onload = async () => {
+        const statusDiv = document.getElementById('setup-status');
+        const btn = document.getElementById('reset-btn');
 
-            // 1. Try to recover the session from the URL hash
+        // Give the page 1 second to parse the URL fragments
+        setTimeout(async () => {
             const { data, error } = await supabase.auth.getSession();
 
-            if (error || !data.session) {
-                statusDiv.innerText = "Invalid or expired link. Please request a new one from the app.";
-                statusDiv.style.color = "#E74C3C";
-            } else {
+            if (data?.session) {
                 statusDiv.innerText = "Ready to reset!";
                 statusDiv.style.color = "#27AE60";
-                btn.disabled = false; // ENABLE THE BUTTON
-            }
-        };
-
-        async function updatePassword() {
-            const password = document.getElementById('new-password').value;
-            const btn = document.getElementById('reset-btn');
-            const statusDiv = document.getElementById('setup-status');
-            const successMsg = document.getElementById('success-msg');
-
-            if (password.length < 6) {
-                alert("Password must be at least 6 characters.");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "Saving...";
-
-            const { error } = await supabase.auth.updateUser({ password: password });
-
-            if (error) {
-                alert("Error: " + error.message);
                 btn.disabled = false;
-                btn.innerText = "Update Password";
             } else {
-                // Success!
-                document.getElementById('new-password').style.display = "none";
-                btn.style.display = "none";
-                statusDiv.style.display = "none";
-                successMsg.style.display = "block";
-                
-                // Clear the session so they are forced to log in fresh in the app
-                await supabase.auth.signOut();
+                // If standard check fails, check if the token is present in the URL at all
+                if (window.location.hash.includes('access_token=')) {
+                    statusDiv.innerText = "Ready to reset! (Manual catch)";
+                    statusDiv.style.color = "#27AE60";
+                    btn.disabled = false;
+                } else {
+                    statusDiv.innerText = "❌ No active session. Please use a fresh link from the app.";
+                    statusDiv.style.color = "#E74C3C";
+                }
             }
+        }, 1000);
+    };
+
+    async function updatePassword() {
+        const password = document.getElementById('new-password').value;
+        const btn = document.getElementById('reset-btn');
+        const statusDiv = document.getElementById('setup-status');
+
+        if (password.length < 6) return alert("Min. 6 characters please!");
+
+        btn.disabled = true;
+        btn.innerText = "Saving...";
+
+        const { error } = await supabase.auth.updateUser({ password: password });
+
+        if (error) {
+            alert("Error: " + error.message);
+            btn.disabled = false;
+            btn.innerText = "Update Password";
+        } else {
+            document.getElementById('new-password').style.display = "none";
+            btn.style.display = "none";
+            statusDiv.innerHTML = "✅ <b>Password Updated!</b><br>You can now close this and log in to Momentum Travel.";
+            statusDiv.style.color = "#27AE60";
+            await supabase.auth.signOut();
         }
-    </script>
+    }
+  </script>
 </body>
 </html>
+
